@@ -1,241 +1,305 @@
 # Tunnelzi - Tunnel Management Tool
 
-## English
+Tunnelzi is a Bash script designed to create, manage, and run various types of network tunnels as systemd services on Ubuntu. It supports multiple tunneling protocols, including Backhaul, SSH, Socat, WireGuard, OpenVPN, GRE, HTTP/HTTPS (via stunnel), and V2Ray/Vmess. This script automates the installation of dependencies and ensures tunnels run reliably as services.
 
-**Tunnelzi** is a Bash script designed to simplify the creation, management, and automation of various types of network tunnels on Linux systems. It supports multiple tunnel types, including Backhaul, SSH-based tunnels (Reverse, Local, and Dynamic SOCKS5), and Socat TCP tunnels. The tool integrates with `systemd` to manage tunnels as services, enabling automatic restarts and boot-time execution.
+## Table of Contents
 
-### Features
-- **Create Tunnels**: Easily set up Backhaul, SSH Reverse, SSH Local, SSH Dynamic SOCKS5, or Socat TCP tunnels.
-- **Manage Tunnels**: Start, stop, enable, or disable tunnels using `systemd`.
-- **List Tunnels**: View all configured tunnels and their status (active/inactive).
-- **Delete Tunnels**: Remove tunnels and their associated configurations and services.
-- **Dependency Check**: Automatically checks and installs required dependencies (`ssh`, `socat`) if run with root privileges.
-- **Systemd Integration**: Creates `systemd` service files for reliable tunnel management.
-- **User-Friendly**: Interactive prompts guide users through tunnel creation and configuration.
+- [Features](#features)
+- [Supported Tunnel Types](#supported-tunnel-types)
+- [Dependencies and Resources](#dependencies-and-resources)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Prerequisites](#prerequisites)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-### Prerequisites
-- A Linux system with `bash` and `systemd`.
-- Root privileges for installing dependencies and managing `systemd` services.
-- For Backhaul tunnels, the `backhaul` binary must be installed at `/usr/local/bin/backhaul`. Source: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-- For SSH-based tunnels, an SSH server and client (`openssh-client`) are required.
-- For Socat tunnels, the `socat` package is required.
+## Features
 
-### Installation
-1. Clone the repository:
+- Create and manage multiple types of network tunnels.
+- Automatic installation of required dependencies (e.g., `wireguard-tools`, `openvpn`, `stunnel4`).
+- Automatic download of tools like Backhaul, ngrok, and V2Ray from their respective repositories if not present.
+- Run tunnels as systemd services for reliability and auto-start on boot.
+- Easy-to-use command-line interface with support for creating, listing, starting, stopping, enabling, disabling, and deleting tunnels.
+
+## Supported Tunnel Types
+
+- **Backhaul**: A lightweight tunneling tool for forwarding local ports to a remote server.
+- **SSH Reverse Tunnel**: Creates a reverse SSH tunnel to expose a local service to a remote server.
+- **SSH Local Tunnel**: Forwards a remote service to a local port via SSH.
+- **SSH Dynamic SOCKS5 Tunnel**: Creates a SOCKS5 proxy via SSH.
+- **Socat TCP Tunnel**: Forwards TCP traffic using the `socat` utility.
+- **WireGuard**: A modern, fast VPN protocol for secure tunneling.
+- **OpenVPN**: A popular VPN solution for secure client-server communication.
+- **GRE**: A layer 3 tunneling protocol without encryption.
+- **HTTP/HTTPS (stunnel)**: Secure tunneling for HTTP/HTTPS traffic using `stunnel`.
+- **V2Ray/Vmess**: A modern proxy protocol with advanced features.
+
+## Dependencies and Resources
+
+Tunnelzi relies on several open-source tools and libraries. Below are the key dependencies and their respective repositories:
+
+- **Backhaul**: Used for Backhaul tunnels. Downloaded from [mmarczuk/go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel).
+- **V2Ray**: Used for V2Ray/Vmess tunnels. Downloaded from [v2fly/v2ray-core](https://github.com/v2fly/v2ray-core).
+- **ngrok**: Optionally used for HTTP/HTTPS tunnels (not used in the current script but included for future compatibility). Available at [ngrok/ngrok](https://github.com/ngrok/ngrok).
+- **WireGuard**: Uses `wireguard-tools` for WireGuard tunnels. Available in Ubuntu repositories.
+- **OpenVPN**: Uses `openvpn` for VPN tunnels. Available in Ubuntu repositories.
+- **stunnel**: Used for HTTP/HTTPS tunnels. Available in Ubuntu repositories as `stunnel4`.
+- **socat**: Used for TCP tunnels. Available in Ubuntu repositories.
+- **iproute2**: Used for GRE tunnels. Available in Ubuntu repositories.
+
+The script automatically downloads Backhaul and V2Ray if not present and installs other dependencies via `apt`.
+
+## Installation
+
+1. **Clone the Repository**:
    ```bash
    git clone https://github.com/majid-rnz/Tunnelzi.git
    cd Tunnelzi
    ```
-2. Copy the script to a system-wide location and make it executable:
+
+2. **Make the Script Executable**:
    ```bash
-   sudo cp tunnelzi /usr/local/bin/tunnelzi
-   sudo chmod +x /usr/local/bin/tunnelzi
-   ```
-3. Ensure the required directory exists:
-   ```bash
-   sudo mkdir -p /etc/tunnelzi/tunnels
+   chmod +x tunnelzi.sh
    ```
 
-### Usage
-Run the `tunnelzi` command with one of the following subcommands:
+3. **Move the Script to a System Path**:
+   ```bash
+   sudo mv tunnelzi.sh /usr/local/bin/tunnelzi
+   ```
+
+4. **Ensure Internet Access**: The script will download dependencies like Backhaul ([mmarczuk/go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel)) and V2Ray ([v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)) if they are not installed. Ensure your system has internet access.
+
+## Usage
+
+Run the script with `sudo` as it requires root privileges to manage systemd services and install dependencies:
 
 ```bash
-tunnelzi [create | list | delete | start | stop | enable | disable | help]
+sudo tunnelzi <command> [options]
 ```
 
-#### Commands
+### Commands
+
 - **`create`**: Create a new tunnel. Prompts for tunnel type and configuration details.
-- **`list`**: List all configured tunnels and their status.
-- **`delete NAME`**: Delete a tunnel and its associated `systemd` service.
+  ```bash
+  sudo tunnelzi create
+  ```
+- **`list`**: List all configured tunnels and their status (active/inactive).
+  ```bash
+  sudo tunnelzi list
+  ```
+- **`delete NAME`**: Delete a tunnel and its associated files.
+  ```bash
+  sudo tunnelzi delete my-tunnel
+  ```
 - **`start NAME`**: Start a tunnel service.
+  ```bash
+  sudo tunnelzi start my-tunnel
+  ```
 - **`stop NAME`**: Stop a tunnel service.
-- **`enable NAME`**: Enable a tunnel to start on boot.
-- **`disable NAME`**: Disable a tunnel from starting on boot.
-- **`help`**: Display the help message with usage instructions.
+  ```bash
+  sudo tunnelzi stop my-tunnel
+  ```
+- **`enable NAME`**: Enable a tunnel to start on system boot.
+  ```bash
+  sudo tunnelzi enable my-tunnel
+  ```
+- **`disable NAME`**: Disable a tunnel from starting on system boot.
+  ```bash
+  sudo tunnelzi disable my-tunnel
+  ```
+- **`help`**: Display the help message with available commands.
+  ```bash
+  sudo tunnelzi help
+  ```
 
-#### Example
-To create an SSH Reverse Tunnel:
-```bash
-sudo tunnelzi create
-```
-1. Select option `2` for SSH Reverse Tunnel.
-2. Enter a unique tunnel name (e.g., `my-tunnel`).
-3. Provide the remote server (e.g., `user@remote.com`), remote port (e.g., `8080`), and local port (e.g., `80`).
-4. The script generates a `systemd` service and configuration files in `/etc/tunnelzi/tunnels`.
+## Prerequisites
 
-To start the tunnel:
-```bash
-sudo tunnelzi start my-tunnel
-```
+- **Operating System**: Ubuntu (or a Debian-based distribution).
+- **Root Access**: The script must be run with `sudo`.
+- **Internet Access**: Required for downloading dependencies like Backhaul and V2Ray.
+- **Specific Requirements**:
+  - **WireGuard**: Generate private and public keys using `wg genkey` and `wg pubkey`.
+  - **OpenVPN**: A valid `.ovpn` configuration file is required.
+  - **V2Ray**: A valid UUID for the Vmess protocol (generate with `uuidgen`).
+  - **GRE**: The `ip_gre` kernel module must be enabled (`modprobe ip_gre`).
+  - **SSH Tunnels**: Valid SSH keys and access to the remote server.
 
-To enable the tunnel on boot:
-```bash
-sudo tunnelzi enable my-tunnel
-```
+## Troubleshooting
 
-### Tunnel Types
-1. **Backhaul Tunnel**: Uses the `backhaul` binary to forward traffic from a local port to a remote server. Source: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-2. **SSH Reverse Tunnel**: Exposes a local port to a remote server via SSH.
-3. **SSH Local Tunnel**: Forwards a local port to a remote server's port via SSH.
-4. **SSH Dynamic SOCKS5 Tunnel**: Creates a SOCKS5 proxy for dynamic port forwarding via SSH.
-5. **Socat TCP Tunnel**: Uses `socat` to forward traffic between a local port and a target IP:port.
-
-### Configuration
-- **Tunnel Configurations**: Stored in `/etc/tunnelzi/tunnels/`.
-  - Shell scripts (`.sh`) for tunnel execution.
-  - TOML files (`.toml`) for Backhaul tunnel configurations.
-- **Systemd Services**: Stored in `/etc/systemd/system/` as `tunnelzi-<name>.service`.
-
-### Notes
-- Run commands with `sudo` when root privileges are required (e.g., for installing dependencies or managing `systemd` services).
-- Ensure the `backhaul` binary is installed for Backhaul tunnels. It must be located at `/usr/local/bin/backhaul`. Source: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-- SSH-based tunnels require valid SSH credentials and access to the remote server.
-- Socat tunnels require the `socat` package to be installed.
-- If a tunnel fails to start, check the `systemd` service logs:
+- **Check Service Status**:
+  ```bash
+  sudo systemctl status tunnelzi-<name>.service
+  ```
+- **View Logs**:
   ```bash
   sudo journalctl -u tunnelzi-<name>.service
   ```
+- **Common Issues**:
+  - **Missing Dependencies**: Ensure internet access for automatic installation of tools like Backhaul and V2Ray.
+  - **Permission Errors**: Run the script with `sudo`.
+  - **WireGuard/OpenVPN/V2Ray Failures**: Verify configuration details (e.g., keys, server addresses).
+  - **GRE Tunnels**: Ensure the remote server is configured to accept GRE traffic.
 
-### Troubleshooting
-- **Dependency Installation Fails**: Ensure you have an active internet connection and sufficient permissions (`sudo`).
-- **Tunnel Not Starting**: Verify the configuration details (e.g., server address, ports) and check `systemd` logs.
-- **Backhaul Binary Missing**: Install the `backhaul` binary manually from [Musixal/Backhaul](https://github.com/Musixal/Backhaul) and place it in `/usr/local/bin/backhaul`.
-- **Permission Denied**: Run commands with `sudo` when prompted.
+## Contributing
 
-### Contributing
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit (`git commit -m "Add feature"`).
-4. Push your changes to the branch on the remote repository (`git push origin feature-branch`).
-5. Open a Pull Request.
+Contributions are welcome! Please fork the repository, make your changes, and submit a pull request. For bug reports or feature requests, open an issue on the [GitHub repository](https://github.com/majid-rnz/Tunnelzi).
 
-### License
+## License
+
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-### Acknowledgments
-- Built with Bash for simplicity and portability.
-- Integrates with `systemd` for robust service management.
-- Supports multiple tunnel types for flexibility in network configurations.
-- Utilizes the Backhaul project for advanced tunneling capabilities: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
 
 ---
 
-## فارسی
+# Tunnelzi - ابزار مدیریت تونل
 
-**تونلزی** یک اسکریپت بش است که برای ساده‌سازی ایجاد، مدیریت و خودکارسازی انواع مختلف تونل‌های شبکه در سیستم‌های لینوکس طراحی شده است. این ابزار از انواع تونل‌های متعدد، از جمله بک‌هال، تونل‌های مبتنی بر SSH (معکوس، محلی و SOCKS5 داینامیک) و تونل‌های TCP Socat پشتیبانی می‌کند. این ابزار با `systemd` یکپارچه شده است تا تونل‌ها را به عنوان سرویس مدیریت کند و امکان راه‌اندازی مجدد خودکار و اجرا در زمان بوت را فراهم آورد.
+Tunnelzi یک اسکریپت Bash است که برای ایجاد، مدیریت و اجرای انواع مختلف تونل‌های شبکه به‌صورت سرویس‌های systemd در اوبونتو طراحی شده است. این اسکریپت از پروتکل‌های مختلف تونل‌سازی مانند Backhaul، SSH، Socat، WireGuard، OpenVPN، GRE، HTTP/HTTPS (از طریق stunnel) و V2Ray/Vmess پشتیبانی می‌کند. این اسکریپت نصب وابستگی‌ها را به‌صورت خودکار انجام می‌دهد و اطمینان می‌دهد که تونل‌ها به‌صورت قابل اعتماد به‌عنوان سرویس اجرا شوند.
 
-### ویژگی‌ها
-- **ایجاد تونل‌ها**: به راحتی تونل‌های بک‌هال، SSH معکوس، SSH محلی، SOCKS5 داینامیک یا TCP Socat را راه‌اندازی کنید.
-- **مدیریت تونل‌ها**: با استفاده از `systemd` تونل‌ها را راه‌اندازی، متوقف، فعال یا غیرفعال کنید.
-- **لیست تونل‌ها**: تمام تونل‌های پیکربندی‌شده و وضعیت آنها (فعال/غیرفعال) را مشاهده کنید.
-- **حذف تونل‌ها**: تونل‌ها و پیکربندی‌ها و سرویس‌های مرتبط با آنها را حذف کنید.
-- **بررسی وابستگی‌ها**: در صورت اجرا با دسترسی ریشه، به طور خودکار وابستگی‌های مورد نیاز (`ssh`، `socat`) را بررسی و نصب می‌کند.
-- **یکپارچگی با Systemd**: فایل‌های سرویس `systemd` را برای مدیریت قابل اعتماد تونل‌ها ایجاد می‌کند.
-- **کاربرپسند**: اعلان‌های تعاملی کاربران را در ایجاد و پیکربندی تونل‌ها راهنمایی می‌کنند.
+## فهرست مطالب
 
-### پیش‌نیازها
-- یک سیستم لینوکس با `bash` و `systemd`.
-- دسترسی ریشه برای نصب وابستگی‌ها و مدیریت سرویس‌های `systemd`.
-- برای تونل‌های بک‌هال، باینری `backhaul` باید در `/usr/local/bin/backhaul` نصب شود. منبع: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-- برای تونل‌های مبتنی بر SSH، سرور و کلاینت SSH (`openssh-client`) مورد نیاز است.
-- برای تونل‌های Socat، بسته `socat` مورد نیاز است.
+- [ویژگی‌ها](#ویژگی‌ها)
+- [انواع تونل‌های پشتیبانی‌شده](#انواع-تونل‌های-پشتیبانی‌شده)
+- [وابستگی‌ها و منابع](#وابستگی‌ها-و-منابع)
+- [نصب](#نصب)
+- [نحوه استفاده](#نحوه-استفاده)
+- [دستورات](#دستورات)
+- [پیش‌نیازها](#پیش‌نیازها)
+- [عیب‌یابی](#عیب‌یابی)
+- [مشارکت](#مشارکت)
+- [مجوز](#مجوز)
 
-### نصب
-1. کلون کردن مخزن:
+## ویژگی‌ها
+
+- ایجاد و مدیریت انواع مختلف تونل‌های شبکه.
+- نصب خودکار وابستگی‌های موردنیاز (مانند `wireguard-tools`، `openvpn`، `stunnel4`).
+- دانلود خودکار ابزارهایی مانند Backhaul، ngrok و V2Ray در صورت عدم وجود.
+- اجرای تونل‌ها به‌صورت سرویس‌های systemd برای قابلیت اطمینان و شروع خودکار در بوت.
+- رابط خط فرمان ساده با پشتیبانی از ایجاد، لیست، شروع، توقف، فعال‌سازی، غیرفعال‌سازی و حذف تونل‌ها.
+
+## انواع تونل‌های پشتیبانی‌شده
+
+- **Backhaul**: ابزاری سبک برای فوروارد کردن پورت‌های محلی به سرور ریموت.
+- **تونل معکوس SSH**: یک تونل SSH معکوس برای نمایش سرویس‌های محلی به سرور ریموت.
+- **تونل محلی SSH**: فوروارد کردن سرویس‌های ریموت به پورت محلی از طریق SSH.
+- **تونل دینامیک SOCKS5 SSH**: ایجاد یک پروکسی SOCKS5 از طریق SSH.
+- **تونل TCP Socat**: فوروارد کردن ترافیک TCP با استفاده از ابزار `socat`.
+- **WireGuard**: یک پروتکل VPN مدرن و سریع برای تونل‌سازی امن.
+- **OpenVPN**: یک راه‌حل محبوب VPN برای ارتباطات امن کلاینت-سرور.
+- **GRE**: یک پروتکل تونل‌سازی لایه 3 بدون رمزنگاری.
+- **HTTP/HTTPS (stunnel)**: تونل‌سازی امن برای ترافیک HTTP/HTTPS با استفاده از `stunnel`.
+- **V2Ray/Vmess**: یک پروتکل پروکسی مدرن با قابلیت‌های پیشرفته.
+
+## وابستگی‌ها و منابع
+
+Tunnelzi از چندین ابزار و کتابخانه متن‌باز استفاده می‌کند. در زیر وابستگی‌های کلیدی و ریپازیتوری‌های مربوطه آورده شده‌اند:
+
+- **Backhaul**: برای تونل‌های Backhaul استفاده می‌شود. از [mmarczuk/go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel) دانلود می‌شود.
+- **V2Ray**: برای تونل‌های V2Ray/Vmess استفاده می‌شود. از [v2fly/v2ray-core](https://github.com/v2fly/v2ray-core) دانلود می‌شود.
+- **ngrok**: به‌صورت اختیاری برای تونل‌های HTTP/HTTPS (در نسخه فعلی استفاده نشده، اما برای سازگاری آینده در نظر گرفته شده است). در [ngrok/ngrok](https://github.com/ngrok/ngrok) موجود است.
+- **WireGuard**: از `wireguard-tools` برای تونل‌های WireGuard استفاده می‌کند. در مخازن اوبونتو موجود است.
+- **OpenVPN**: از `openvpn` برای تونل‌های VPN استفاده می‌کند. در مخازن اوبونتو موجود است.
+- **stunnel**: برای تونل‌های HTTP/HTTPS استفاده می‌شود. به‌عنوان `stunnel4` در مخازن اوبونتو موجود است.
+- **socat**: برای تونل‌های TCP استفاده می‌شود. در مخازن اوبونتو موجود است.
+- **iproute2**: برای تونل‌های GRE استفاده می‌شود. در مخازن اوبونتو موجود است.
+
+اسکریپت به‌صورت خودکار Backhaul و V2Ray را در صورت عدم وجود دانلود می‌کند و سایر وابستگی‌ها را از طریق `apt` نصب می‌کند.
+
+## نصب
+
+1. **کلون کردن ریپازیتوری**:
    ```bash
    git clone https://github.com/majid-rnz/Tunnelzi.git
    cd Tunnelzi
    ```
-2. اسکریپت را به یک مکان سیستمی کپی کرده و قابل اجرا کنید:
+
+2. **ایجاد مجوز اجرایی برای اسکریپت**:
    ```bash
-   sudo cp tunnelzi /usr/local/bin/tunnelzi
-   sudo chmod +x /usr/local/bin/tunnelzi
-   ```
-3. اطمینان حاصل کنید که دایرکتوری مورد نیاز وجود دارد:
-   ```bash
-   sudo mkdir -p /etc/tunnelzi/tunnels
+   chmod +x tunnelzi.sh
    ```
 
-### استفاده
-دستور `tunnelzi` را با یکی از زیرفرمان‌های زیر اجرا کنید:
+3. **انتقال اسکریپت به مسیر سیستمی**:
+   ```bash
+   sudo mv tunnelzi.sh /usr/local/bin/tunnelzi
+   ```
+
+4. **اطمینان از دسترسی به اینترنت**: اسکریپت وابستگی‌هایی مانند Backhaul ([mmarczuk/go-http-tunnel](https://github.com/mmatczuk/go-http-tunnel)) و V2Ray ([v2fly/v2ray-core](https://github.com/v2fly/v2ray-core)) را در صورت عدم وجود دانلود می‌کند. اطمینان حاصل کنید که سیستم شما به اینترنت متصل است.
+
+## نحوه استفاده
+
+اسکریپت را با `sudo` اجرا کنید، زیرا نیاز به دسترسی ریشه برای مدیریت سرویس‌های systemd و نصب وابستگی‌ها دارد:
 
 ```bash
-tunnelzi [create | list | delete | start | stop | enable | disable | help]
+sudo tunnelzi <دستور> [گزینه‌ها]
 ```
 
-#### دستورات
-- **`create`**: یک تونل جدید ایجاد کنید. برای نوع تونل و جزئیات پیکربندی درخواست می‌دهد.
-- **`list`**: تمام تونل‌های پیکربندی‌شده و وضعیت آنها را فهرست کنید.
-- **`delete NAME`**: یک تونل و سرویس `systemd` مرتبط با آن را حذف کنید.
-- **`start NAME`**: یک سرویس تونل را راه‌اندازی کنید.
-- **`stop NAME`**: یک سرویس تونل را متوقف کنید.
-- **`enable NAME`**: یک تونل را برای شروع در زمان بوت فعال کنید.
-- **`disable NAME`**: یک تونل را از شروع در زمان بوت غیرفعال کنید.
-- **`help`**: پیام راهنما را با دستورالعمل‌های استفاده نمایش دهید.
+### دستورات
 
-#### مثال
-برای ایجاد یک تونل معکوس SSH:
-```bash
-sudo tunnelzi create
-```
-1. گزینه `2` را برای تونل معکوس SSH انتخاب کنید.
-2. یک نام منحصر به فرد برای تونل وارد کنید (مثلاً `my-tunnel`).
-3. سرور ریموت (مثلاً `user@remote.com`)، پورت ریموت (مثلاً `8080`) و پورت محلی (مثلاً `80`) را وارد کنید.
-4. اسکریپت یک سرویس `systemd` و فایل‌های پیکربندی را در `/etc/tunnelzi/tunnels` تولید می‌کند.
+- **`create`**: ایجاد یک تونل جدید. از کاربر نوع تونل و جزئیات تنظیمات را درخواست می‌کند.
+  ```bash
+  sudo tunnelzi create
+  ```
+- **`list`**: نمایش تمام تونل‌های پیکربندی‌شده و وضعیت آن‌ها (فعال/غیرفعال).
+  ```bash
+  sudo tunnelzi list
+  ```
+- **`delete NAME`**: حذف یک تونل و فایل‌های مرتبط با آن.
+  ```bash
+  sudo tunnelzi delete my-tunnel
+  ```
+- **`start NAME`**: شروع یک سرویس تونل.
+  ```bash
+  sudo tunnelzi start my-tunnel
+  ```
+- **`stop NAME`**: توقف یک سرویس تونل.
+  ```bash
+  sudo tunnelzi stop my-tunnel
+  ```
+- **`enable NAME`**: فعال‌سازی یک تونل برای شروع خودکار در بوت سیستم.
+  ```bash
+  sudo tunnelzi enable my-tunnel
+  ```
+- **`disable NAME`**: غیرفعال‌سازی یک تونل از شروع خودکار در بوت سیستم.
+  ```bash
+  sudo tunnelzi disable my-tunnel
+  ```
+- **`help`**: نمایش پیام راهنما با دستورات موجود.
+  ```bash
+  sudo tunnelzi help
+  ```
 
-برای راه‌اندازی تونل:
-```bash
-sudo tunnelzi start my-tunnel
-```
+## پیش‌نیازها
 
-برای فعال کردن تونل در زمان بوت:
-```bash
-sudo tunnelzi enable my-tunnel
-```
+- **سیستم‌عامل**: اوبونتو (یا توزیع‌های مبتنی بر دبیان).
+- **دسترسی ریشه**: اسکریپت باید با `sudo` اجرا شود.
+- **دسترسی به اینترنت**: برای دانلود وابستگی‌ها مانند Backhaul و V2Ray موردنیاز است.
+- **نیازمندی‌های خاص**:
+  - **WireGuard**: تولید کلیدهای خصوصی و عمومی با استفاده از `wg genkey` و `wg pubkey`.
+  - **OpenVPN**: نیاز به فایل تنظیمات `.ovpn` معتبر.
+  - **V2Ray**: نیاز به UUID معتبر برای پروتکل Vmess (با `uuidgen` تولید کنید).
+  - **GRE**: ماژول کرنل `ip_gre` باید فعال باشد (`modprobe ip_gre`).
+  - **تونل‌های SSH**: نیاز به کلیدهای SSH معتبر و دسترسی به سرور ریموت.
 
-### انواع تونل
-1. **تونل بک‌هال**: از باینری `backhaul` برای ارسال ترافیک از یک پورت محلی به سرور ریموت استفاده می‌کند. منبع: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-2. **تونل معکوس SSH**: یک پورت محلی را از طریق SSH به سرور ریموت نمایش می‌دهد.
-3. **تونل محلی SSH**: یک پورت محلی را از طریق SSH به پورت سرور ریموت هدایت می‌کند.
-4. **تونل SOCKS5 داینامیک SSH**: یک پراکسی SOCKS5 برای هدایت پورت داینامیک از طریق SSH ایجاد می‌کند.
-5. **تونل TCP Socat**: از `socat` برای هدایت ترافیک بین یک پورت محلی و IP:port مقصد استفاده می‌کند.
+## عیب‌یابی
 
-### پیکربندی
-- **پیکربندی تونل‌ها**: در `/etc/tunnelzi/tunnels/` ذخیره می‌شود.
-  - اسکریپت‌های شل (`.sh`) برای اجرای تونل.
-  - فایل‌های TOML (`.toml`) برای پیکربندی تونل‌های بک‌هال.
-- **سرویس‌های Systemd**: در `/etc/systemd/system/` به صورت `tunnelzi-<name>.service` ذخیره می‌شود.
-
-### نکات
-- دستورات را با `sudo` اجرا کنید زمانی که دسترسی ریشه مورد نیاز است (مثلاً برای نصب وابستگی‌ها یا مدیریت سرویس‌های `systemd`).
-- اطمینان حاصل کنید که باینری `backhaul` برای تونل‌های بک‌هال نصب شده است. باید در `/usr/local/bin/backhaul` قرار داشته باشد. منبع: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
-- تونل‌های مبتنی بر SSH به اعتبارنامه‌های SSH معتبر و دسترسی به سرور ریموت نیاز دارند.
-- تونل‌های Socat به بسته `socat` نیاز دارند.
-- اگر تونلی راه‌اندازی نشد، لاگ‌های سرویس `systemd` را بررسی کنید:
+- **بررسی وضعیت سرویس**:
+  ```bash
+  sudo systemctl status tunnelzi-<name>.service
+  ```
+- **مشاهده لاگ‌ها**:
   ```bash
   sudo journalctl -u tunnelzi-<name>.service
   ```
+- **مشکلات رایج**:
+  - **عدم وجود وابستگی‌ها**: اطمینان حاصل کنید که به اینترنت متصل هستید تا نصب خودکار ابزارهایی مانند Backhaul و V2Ray انجام شود.
+  - **خطاهای مجوز**: اسکریپت را با `sudo` اجرا کنید.
+  - **خطاهای WireGuard/OpenVPN/V2Ray**: جزئیات تنظیمات (مانند کلیدها، آدرس‌های سرور) را بررسی کنید.
+  - **تونل‌های GRE**: اطمینان حاصل کنید که سرور ریموت برای پذیرش ترافیک GRE پیکربندی شده است.
 
-### عیب‌یابی
-- **خطا در نصب وابستگی‌ها**: اطمینان حاصل کنید که اتصال اینترنت فعال و دسترسی کافی (`sudo`) دارید.
-- **تونل راه‌اندازی نمی‌شود**: جزئیات پیکربندی (مانند آدرس سرور، پورت‌ها) را بررسی کنید و لاگ‌های `systemd` را چک کنید.
-- **باینری بک‌هال موجود نیست**: باینری `backhaul` را به صورت دستی از [Musixal/Backhaul](https://github.com/Musixal/Backhaul) نصب کنید و در `/usr/local/bin/backhaul` قرار دهید.
-- **عدم دسترسی**: دستورات را با `sudo` اجرا کنید وقتی درخواست می‌شود.
+## مشارکت
 
-### مشارکت
-مشارکت‌ها استقبال می‌شوند! لطفاً این مراحل را دنبال کنید:
-1. مخزن را فورک کنید.
-2. یک شاخه جدید ایجاد کنید (`git checkout -b feature-branch`).
-3. تغییرات خود را انجام دهید و کامیت کنید (`git commit -m "Add feature"`).
-4. تغییرات خود را به شاخه مربوطه در مخزن راه دور ارسال کنید (`git push origin feature-branch`).
-5. یک درخواست Pull باز کنید.
+مشارکت‌ها استقبال می‌شوند! لطفاً ریپازیتوری را فورک کنید، تغییرات خود را اعمال کنید و یک درخواست کش (pull request) ارسال کنید. برای گزارش باگ یا درخواست ویژگی، یک مسئله (issue) در [ریپازیتوری GitHub](https://github.com/majid-rnz/Tunnelzi) باز کنید.
 
-### مجوز
-این پروژه تحت مجوز MIT منتشر شده است. برای جزئیات به فایل [LICENSE](LICENSE) مراجعه کنید.
+## مجوز
 
-### قدردانی
-- با بش برای سادگی و قابلیت حمل ساخته شده است.
-- با `systemd` برای مدیریت قوی سرویس‌ها یکپارچه شده است.
-- از انواع تونل‌های متعدد برای انعطاف‌پذیری در پیکربندی‌های شبکه پشتیبانی می‌کند.
-- از پروژه بک‌هال برای قابلیت‌های پیشرفته تونل‌سازی استفاده می‌کند: [Musixal/Backhaul](https://github.com/Musixal/Backhaul).
+این پروژه تحت مجوز MIT منتشر شده است. برای جزئیات، فایل [LICENSE](LICENSE) را ببینید.
